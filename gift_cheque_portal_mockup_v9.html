@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Gift Cheque Portal</title>
+<style>
+  :root{
+    --ink:#16233A;
+    --ink-soft:#5B6B85;
+    --bg:#F5F6F5;
+    --panel:#FFFFFF;
+    --line:#E3E6EA;
+    --teal:#0E6B5D;
+    --teal-soft:#E6F2EF;
+    --amber:#B4791F;
+    --amber-soft:#FBF0DE;
+    --red:#B23A34;
+    --red-soft:#FBEBEA;
+    --radius:8px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+  }
+  .shell{ display:flex; min-height:100vh; }
+
+  /* ---- sidebar ---- */
+  .sidebar{
+    width:220px; flex-shrink:0;
+    background:var(--ink);
+    color:#fff;
+    padding:24px 0;
+    display:flex; flex-direction:column;
+  }
+  .brand{ padding:0 20px 20px; border-bottom:1px solid rgba(255,255,255,.12); margin-bottom:16px;}
+  .brand-mark{ font-size:15px; font-weight:700; letter-spacing:.2px; }
+  .brand-sub{ font-size:12px; color:#9FB0C7; margin-top:2px; }
+  .navgroup-label{ font-size:11px; color:#7C8AA3; padding:0 20px; margin:14px 0 6px; }
+  .navitem{
+    padding:9px 20px; font-size:14px; color:#D6DEEA; cursor:pointer;
+    border-left:3px solid transparent;
+  }
+  .navitem:hover{ background:rgba(255,255,255,.06); }
+  .navitem.active{ background:rgba(255,255,255,.10); border-left-color:var(--teal); color:#fff; font-weight:600; }
+  .role-switch{ margin-top:auto; padding:16px 20px 0; border-top:1px solid rgba(255,255,255,.12); }
+  .role-switch label{ font-size:10.5px; color:#7C8AA3; display:block; margin-bottom:6px; line-height:1.4;}
+  .role-btns{ display:flex; gap:6px; }
+  .role-btn{
+    flex:1; padding:6px 0; font-size:12px; text-align:center; border-radius:6px;
+    background:rgba(255,255,255,.08); color:#D6DEEA; cursor:pointer; border:1px solid transparent;
+  }
+  .role-btn.active{ background:var(--teal); color:#fff; }
+
+  /* ---- main ---- */
+  .main{ flex:1; padding:28px 36px 60px; max-width:1080px; }
+  .topbar{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:22px; }
+  .pagetitle{ font-size:21px; font-weight:700; margin:0; }
+  .pagesub{ font-size:13px; color:var(--ink-soft); margin-top:3px; }
+  .whoami{ font-size:12.5px; color:var(--ink-soft); text-align:right; }
+  .whoami b{ color:var(--ink); }
+
+  .panel{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:20px 22px; margin-bottom:20px;
+  }
+  .panel h2{ font-size:14.5px; margin:0 0 4px; }
+  .panel .hint{ font-size:12.5px; color:var(--ink-soft); margin:0 0 16px; }
+
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  th{
+    text-align:left; font-weight:600; font-size:12px; color:var(--ink-soft);
+    padding:8px 10px; border-bottom:1px solid var(--line);
+  }
+  td{ padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  tr:last-child td{ border-bottom:none; }
+  td.locked{ color:var(--ink-soft); }
+  input[type=number]{
+    width:78px; padding:6px 8px; border:1px solid var(--line); border-radius:6px;
+    font-size:13.5px; font-family:inherit;
+  }
+  input[type=text]{
+    width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:6px;
+    font-size:13.5px; font-family:inherit;
+  }
+  input:focus{ outline:2px solid var(--teal); outline-offset:1px; border-color:var(--teal); }
+  input.needs-remark{ border-color:var(--amber); }
+
+  .variance{ font-weight:600; }
+  .variance.zero{ color:var(--ink-soft); }
+  .variance.off{ color:var(--amber); }
+  .row-flag{ background:var(--amber-soft); }
+
+  .pill{ display:inline-block; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:99px; }
+  .pill.ok{ background:var(--teal-soft); color:var(--teal); }
+  .pill.warn{ background:var(--amber-soft); color:var(--amber); }
+  .pill.pending{ background:#EEF0F3; color:var(--ink-soft); }
+  .pill.red{ background:var(--red-soft); color:var(--red); }
+
+  .actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:6px; }
+  button{ font-family:inherit; font-size:13.5px; cursor:pointer; border-radius:6px; padding:9px 18px; border:1px solid var(--line); background:#fff; color:var(--ink); }
+  button.primary{ background:var(--teal); border-color:var(--teal); color:#fff; font-weight:600; }
+  button.primary:disabled{ background:#A9C6BF; border-color:#A9C6BF; cursor:not-allowed; }
+  button:hover:not(:disabled){ filter:brightness(0.97); }
+
+  .banner{
+    display:flex; align-items:center; gap:8px; font-size:13px; padding:10px 14px;
+    border-radius:6px; margin-bottom:16px;
+  }
+  .banner.locked{ background:#EEF0F3; color:var(--ink-soft); border:1px solid var(--line); }
+  .banner.submitted{ background:var(--teal-soft); color:var(--teal); border:1px solid #BFE0D8; }
+  .banner.mnet{ background:#EFF3FB; color:#2A3F63; border:1px solid #D6E0F2; font-size:12.5px; }
+  .banner.mnet b{ color:var(--ink); }
+
+  .statgrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+  .stat{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; }
+  .stat .num{ font-size:24px; font-weight:700; }
+  .stat .lbl{ font-size:12.5px; color:var(--ink-soft); margin-top:2px; }
+
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  footer.note{ font-size:12px; color:var(--ink-soft); margin-top:6px; }
+
+  .submitted-message{
+    display:none; margin-top:14px; padding:11px 14px; border-radius:6px;
+    background:var(--teal-soft); color:var(--teal); border:1px solid #BFE0D8; font-size:13px;
+  }
+  .submitted-message.show{display:block;}
+  #recon-table input[readonly]{background:#F4F5F7; color:var(--ink-soft); cursor:not-allowed;}
+  #recon-table input:disabled{background:#F4F5F7; color:var(--ink-soft); cursor:not-allowed;}
+  .accepted-qty{display:flex; align-items:center; gap:5px;}
+  .accepted-qty input{width:58px; padding:6px 6px; border:1px solid var(--line); border-radius:6px; font-size:13px; font-family:inherit;}
+  .accepted-qty span{color:var(--ink-soft);}
+  .submitted #recon-table input{background:#F4F5F7;}
+
+
+  .report-table-wrap{overflow-x:auto;}
+  .report-table-wrap table{min-width:860px;}
+  .report-table-wrap th span{font-weight:400; font-size:10.5px; color:var(--ink-soft);}
+  .report-filter{display:flex; align-items:center; gap:10px; margin-bottom:16px;}
+  .report-filter label{font-size:12.5px; color:var(--ink-soft); font-weight:600;}
+  .report-filter select{
+    min-width:240px; padding:8px 10px; border:1px solid var(--line);
+    border-radius:6px; background:#fff; color:var(--ink); font:inherit;
+  }
+  .report-kpi{font-weight:600;}
+  .report-cell-stack{line-height:1.55; white-space:nowrap;}
+  .report-cell-stack .label{color:var(--ink-soft); font-size:10.5px;}
+  .received-btn{min-width:82px;}
+
+
+  .rbd-report-panel{padding-bottom:20px;}
+  .report-header{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:18px;}
+  .report-header h2{margin-bottom:5px;}
+  .report-controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
+  .report-control{display:flex;flex-direction:column;gap:5px;}
+  .report-control label{font-size:11px;color:var(--ink-soft);font-weight:700;}
+  .report-control select{min-width:150px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font:inherit;}
+  .report-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0 0 18px;}
+  .report-stat{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:#fafbfc;}
+  .report-stat-label{display:block;color:var(--ink-soft);font-size:11px;margin-bottom:3px;}
+  .report-stat strong{font-size:20px;line-height:1;}
+  .human-report{min-width:920px;border-collapse:separate;border-spacing:0;}
+  .human-report th{white-space:nowrap;background:#f7f8fa;font-size:11.5px;}
+  .human-report td{vertical-align:middle;padding:11px 12px;}
+  .human-report tbody tr.branch-start td{border-top:2px solid var(--line);}
+  .human-report tbody tr:first-child td{border-top:0;}
+  .human-report .branch-name{font-weight:700;min-width:145px;}
+  .human-report .denom{font-weight:600;white-space:nowrap;}
+  .human-report .number{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;}
+  .human-report .variance-positive{font-weight:700;}
+  .human-report .variance-zero{font-weight:600;}
+  .human-report .branch-empty{padding:16px;color:var(--ink-soft);text-align:center;}
+  @media(max-width:800px){
+    .report-header{flex-direction:column;}
+    .report-controls{justify-content:flex-start;}
+    .report-summary{grid-template-columns:repeat(2,1fr);}
+  }
+
+
+  #rbd-nav .navitem{white-space:normal;}
+  #rbd-nav .navitem.active{font-weight:700;}
+
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <div class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">MTB · Gift Cheque Portal</div>
+
+    </div>
+
+    <div id="branch-nav">
+      <div class="navgroup-label">Branch view</div>
+      <div class="navitem active" data-view="recon">Stock Reconciliation</div>
+      <div class="navitem" data-view="requisition">New Design Requisition</div>
+    </div>
+    <div id="mid-nav" style="display:none;">
+      <div class="navgroup-label">MID view</div>
+      <div class="navitem active" data-view="requests">Requisition Requests</div>
+    </div>
+    <div id="rbd-nav" style="display:none;">
+      <div class="navgroup-label">RBD view</div>
+      <div class="navitem active" data-view="rbd-recon">Stock Reconciliation Report</div>
+      <div class="navitem" data-view="rbd-requisition">Branch Requisition Report</div>
+    </div>
+
+    <div class="role-switch">
+<div class="role-btns">
+        <div class="role-btn active" data-role="branch">BM/BOM</div>
+        <div class="role-btn" data-role="mid">MID</div>
+        <div class="role-btn" data-role="rbd">RBD</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- BRANCH: RECONCILIATION -->
+    <div class="view active" id="view-recon">
+      <div class="topbar">
+        <div>
+          <p class="pagetitle">Stock Reconciliation</p>
+          <p class="pagesub">Confirm your physical stock against what MID recorded as sent to your branch.</p>
+        </div>
+        <div class="whoami"><b>Sukanna Reza Polock</b><br>Branch Manager · Cox's Bazar Branch</div>
+      </div>
+
+      <div class="panel">
+        <h2>Denomination-wise declaration</h2>
+        <p class="hint">Enter physical stock. Sold/Issued and Outstanding are fetched from CBS and cannot be edited. Variance is calculated automatically.</p>
+        <table id="recon-table">
+          <thead>
+            <tr>
+              <th>Denomination</th>
+              <th>MID Historical Qty</th>
+              <th>Sold/Issued (CBS Fetch)</th>
+              <th>Physical Stock</th>
+              <th>Variance</th>
+              <th>Outstanding (CBS Fetch)</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-sent="0">
+              <td>BDT 500</td>
+              <td class="locked">0</td>
+              <td><input type="number" class="issued" value="0" min="0" readonly></td>
+              <td><input type="number" class="stock" value="0" min="0"></td>
+              <td class="variance zero">0</td>
+              <td><input type="number" class="outstanding" min="0" value="12" readonly></td>
+              <td><input type="text" class="remark" placeholder="Required if variance ≠ 0" disabled></td>
+            </tr>
+            <tr data-sent="200">
+              <td>BDT 1,000</td>
+              <td class="locked">200</td>
+              <td><input type="number" class="issued" value="150" min="0" readonly></td>
+              <td><input type="number" class="stock" value="45" min="0"></td>
+              <td class="variance">—</td>
+              <td><input type="number" class="outstanding" min="0" value="7" readonly></td>
+              <td><input type="text" class="remark" placeholder="Required if variance ≠ 0"></td>
+            </tr>
+            <tr data-sent="100">
+              <td>BDT 5,000</td>
+              <td class="locked">100</td>
+              <td><input type="number" class="issued" value="60" min="0" readonly></td>
+              <td><input type="number" class="stock" value="40" min="0"></td>
+              <td class="variance">—</td>
+              <td><input type="number" class="outstanding" min="0" value="3" readonly></td>
+              <td><input type="text" class="remark" placeholder="Required if variance ≠ 0"></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="actions">
+          <button id="recon-save">Save draft</button>
+          <button class="primary" id="recon-submit">Submit</button>
+        </div>
+        <div id="recon-submitted-message" class="submitted-message" aria-live="polite"></div>
+        <footer class="note">Variance = MID Historical Qty − Sold/Issued (CBS Fetch) − Physical Stock. A remark is required wherever variance is not zero.</footer>
+      </div>
+    </div>
+
+    <!-- BRANCH: REQUISITION -->
+    <div class="view" id="view-requisition">
+      <div class="topbar">
+        <div>
+          <p class="pagetitle">New Design Requisition</p>
+          <p class="pagesub">Request new-design Gift Cheque stock from MID.</p>
+        </div>
+        <div class="whoami"><b>Sukanna Reza Polock</b><br>Branch Manager · Cox's Bazar Branch</div>
+      </div>
+
+      <div class="panel">
+        <h2>Request quantity</h2>
+        <p class="hint">Enter the quantity of new-design Gift Cheque stock required.</p>
+        <table id="requisition-input-table">
+          <thead><tr><th>Denomination</th><th>Quantity requested</th></tr></thead>
+          <tbody>
+            <tr><td>BDT 500</td><td><input type="number" min="0" value="0"></td></tr>
+            <tr><td>BDT 1,000</td><td><input type="number" min="0" value="0"></td></tr>
+            <tr><td>BDT 5,000</td><td><input type="number" min="0" value="0"></td></tr>
+          </tbody>
+        </table>
+        <div class="actions">
+          <button class="primary" id="requisition-submit">Submit requisition</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Your requisition history</h2>
+        <table>
+          <thead><tr><th>Date</th><th>Qty Requested (500/1000/5000)</th><th>Qty Accepted (500/1000/5000)</th><th>Status</th><th>Status (Branch)</th></tr></thead>
+          <tbody id="requisition-history-body">
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- RBD: STOCK RECONCILIATION REPORT -->
+    <div class="view" id="view-rbd-recon">
+      <div class="topbar">
+        <div>
+          <p class="pagetitle">Stock Reconciliation Report</p>
+          <p class="pagesub">Branch-level stock reconciliation across all 33 branches.</p>
+        </div>
+      </div>
+
+      <div class="panel rbd-report-panel">
+        <div class="report-header">
+          <div>
+            <h2>Stock Reconciliation Report</h2>
+            <p class="hint">A branch-level view of historical stock, CBS activity, physical stock, variance and outstanding quantities.</p>
+          </div>
+          <div class="report-controls">
+            <div class="report-control">
+              <label for="rbd-recon-branch">Branch</label>
+              <select id="rbd-recon-branch">
+                <option value="all">All branches</option>
+              </select>
+            </div>
+            <div class="report-control">
+              <label for="rbd-recon-status">Status</label>
+              <select id="rbd-recon-status">
+                <option value="all">All</option>
+                <option value="balanced">Balanced</option>
+                <option value="variance">Variance</option>
+                <option value="no-data">No data</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="report-summary">
+          <div class="report-stat">
+            <span class="report-stat-label">Branches</span>
+            <strong id="rbd-total-branches">33</strong>
+          </div>
+          <div class="report-stat">
+            <span class="report-stat-label">Balanced</span>
+            <strong id="rbd-balanced-count">0</strong>
+          </div>
+          <div class="report-stat">
+            <span class="report-stat-label">With variance</span>
+            <strong id="rbd-variance-count">0</strong>
+          </div>
+          <div class="report-stat">
+            <span class="report-stat-label">No data</span>
+            <strong id="rbd-no-data-count">32</strong>
+          </div>
+        </div>
+
+        <div class="report-table-wrap">
+          <table id="rbd-recon-report" class="human-report">
+            <thead>
+              <tr>
+                <th>Branch</th>
+                <th>Denomination</th>
+                <th>MID Historical Qty</th>
+                <th>Sold / Issued<br><span>(CBS Fetch)</span></th>
+                <th>Physical Stock</th>
+                <th>Variance</th>
+                <th>Outstanding<br><span>(CBS Fetch)</span></th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="rbd-recon-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RBD: BRANCH REQUISITION REPORT -->
+    <div class="view" id="view-rbd-requisition">
+      <div class="topbar">
+        <div>
+          <p class="pagetitle">Branch Requisition Report</p>
+          <p class="pagesub">Track requested, accepted and received new-design stock by branch. Requisition CBS figures are independent of Stock Reconciliation.</p>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Branch Requisition Report</h2>
+        <p class="hint">Select a branch to view its new-design requests, receipt date, CBS activity, outstanding stock and physical stock.</p>
+
+        <div class="report-filter">
+          <label for="rbd-branch-select">Branch</label>
+          <select id="rbd-branch-select">
+            <option value="Cox's Bazar Branch">Cox's Bazar Branch</option>
+            <option value="Dhanmondi Branch">Dhanmondi Branch</option>
+            <option value="Gulshan Branch">Gulshan Branch</option>
+            <option value="Banani Branch">Banani Branch</option>
+            <option value="Rangpur Branch">Rangpur Branch</option>
+            <option value="Tower Branch">Tower Branch</option>
+          </select>
+        </div>
+
+        <div class="report-table-wrap">
+          <table id="rbd-requisition-report">
+            <thead>
+              <tr>
+                <th>Qty Requested (500/1000/5000)</th>
+                <th>Qty Accepted (500/1000/5000)</th>
+                <th>Date Received</th>
+                <th>Sold/Issued (CBS Fetched)</th>
+                <th>Outstanding (CBS Fetched)</th>
+                <th>Physical Stock</th>
+              </tr>
+            </thead>
+            <tbody id="rbd-requisition-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- MID: REQUESTS -->
+    <div class="view" id="view-requests">
+      <div class="topbar">
+        <div>
+          <p class="pagetitle">Requisition Requests</p>
+          <p class="pagesub">New-design stock requests awaiting review.</p>
+        </div>
+        <div class="whoami"><b>Farjana Jerin Khan</b><br>MID · Gift Cheque Desk</div>
+      </div>
+
+      <div class="panel">
+        <table id="mid-requests-table">
+          <thead><tr><th>Branch</th><th>Qty Requested (500/1000/5000)</th><th>Requested On</th><th>Qty Accepted (500/1000/5000)</th><th>Status</th><th></th></tr></thead>
+          <tbody id="mid-requests-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ---------------- Navigation ----------------
+  let branchView = document.querySelector('#branch-nav .navitem.active')?.dataset.view || 'recon';
+  let midView = document.querySelector('#mid-nav .navitem.active')?.dataset.view || 'requests';
+  let rbdView = 'rbd-recon';
+
+  function activateView(viewName, navId){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    const target = document.getElementById('view-'+viewName);
+    if(target) target.classList.add('active');
+
+    ['branch-nav','mid-nav','rbd-nav'].forEach(id=>{
+      const group=document.getElementById(id);
+      if(group){
+        group.querySelectorAll('.navitem').forEach(i=>{
+          i.classList.toggle('active', i.dataset.view === viewName && id === navId);
+        });
+      }
+    });
+  }
+
+  document.querySelectorAll('.navitem').forEach(item=>{
+    item.addEventListener('click', ()=>{
+      const group = item.closest('#branch-nav, #mid-nav, #rbd-nav');
+      if(group.id === 'branch-nav') branchView = item.dataset.view;
+      if(group.id === 'mid-nav') midView = item.dataset.view;
+      if(group.id === 'rbd-nav') rbdView = item.dataset.view;
+      activateView(item.dataset.view, group.id);
+      if(item.dataset.view === 'rbd-recon' || item.dataset.view === 'rbd-requisition') renderRBDReports();
+    });
+  });
+
+  document.querySelectorAll('.role-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const role = btn.dataset.role;
+      const isBranch = role === 'branch';
+      const isMid = role === 'mid';
+      const isRbd = role === 'rbd';
+
+      document.getElementById('branch-nav').style.display = isBranch ? 'block' : 'none';
+      document.getElementById('mid-nav').style.display = isMid ? 'block' : 'none';
+      document.getElementById('rbd-nav').style.display = isRbd ? 'block' : 'none';
+
+      const targetView = isBranch ? branchView : (isMid ? midView : rbdView);
+      const targetNav = isBranch ? 'branch-nav' : (isMid ? 'mid-nav' : 'rbd-nav');
+
+      activateView(targetView, targetNav);
+      renderRequisitionState();
+      renderRBDReports();
+    });
+  });
+
+  // ---------------- Shared requisition state ----------------
+  const REQUESTS_KEY = 'giftChequePortalRequests_v2';
+
+  const BRANCHES = [
+    "Cox's Bazar Branch","Dhanmondi Branch","Gulshan Branch","Banani Branch",
+    "Rangpur Branch","Tower Branch",
+    "Branch 07","Branch 08","Branch 09","Branch 10","Branch 11","Branch 12",
+    "Branch 13","Branch 14","Branch 15","Branch 16","Branch 17","Branch 18",
+    "Branch 19","Branch 20","Branch 21","Branch 22","Branch 23","Branch 24",
+    "Branch 25","Branch 26","Branch 27","Branch 28","Branch 29","Branch 30",
+    "Branch 31","Branch 32","Branch 33"
+  ];
+
+  function loadRequests(){
+    try { return JSON.parse(localStorage.getItem(REQUESTS_KEY) || '[]'); }
+    catch(e){ return []; }
+  }
+
+  function saveRequests(requests){
+    localStorage.setItem(REQUESTS_KEY, JSON.stringify(requests));
+  }
+
+  function formatDateTime(iso){
+    return new Date(iso).toLocaleString('en-GB', {
+      day:'2-digit', month:'short', year:'numeric',
+      hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true
+    });
+  }
+
+  function formatDateOnly(iso){
+    if(!iso) return '—';
+    return new Date(iso).toLocaleDateString('en-GB', {
+      day:'2-digit', month:'short', year:'numeric'
+    });
+  }
+
+  function statusLabel(status){
+    if(status === 'pending') return 'Pending';
+    if(status === 'approved') return 'Approved';
+    if(status === 'dispatched') return 'Dispatched';
+    return status;
+  }
+
+  function statusClass(status){
+    if(status === 'approved' || status === 'dispatched') return 'ok';
+    return 'pending';
+  }
+
+  function renderRequisitionState(){
+    const requests = loadRequests();
+
+    const historyBody = document.getElementById('requisition-history-body');
+    if(historyBody){
+      historyBody.innerHTML = '';
+
+      requests.slice().reverse().forEach(req=>{
+        const tr = document.createElement('tr');
+        const accepted = req.accepted ? req.accepted.join(' / ') : '—';
+        const canReceive = req.status === 'dispatched';
+        const received = req.branchReceived === true;
+
+        tr.innerHTML = `
+          <td>${formatDateTime(req.requestedAt)}</td>
+          <td>${req.requested.join(' / ')}</td>
+          <td>${accepted}</td>
+          <td><span class="pill ${statusClass(req.status)}">${statusLabel(req.status)}</span></td>
+          <td>
+            <button class="received-btn" data-request-id="${req.id}"
+                    ${canReceive && !received ? '' : 'disabled'}>
+              ${received ? 'Received' : 'Received'}
+            </button>
+          </td>
+        `;
+
+        const receiveBtn = tr.querySelector('.received-btn');
+        if(receiveBtn){
+          receiveBtn.addEventListener('click', ()=>{
+            const latest = loadRequests();
+            const target = latest.find(r=>r.id === req.id);
+            if(!target || target.status !== 'dispatched') return;
+            target.branchReceived = true;
+            target.receivedAt = new Date().toISOString();
+            saveRequests(latest);
+            renderRequisitionState();
+            renderRBDReports();
+          });
+        }
+
+        historyBody.appendChild(tr);
+      });
+    }
+
+    const midBody = document.getElementById('mid-requests-body');
+    if(midBody){
+      midBody.innerHTML = '';
+
+      requests.forEach(req=>{
+        const tr = document.createElement('tr');
+        const acceptedValues = req.accepted || ['', '', ''];
+        const inputsDisabled = req.status !== 'pending' ? 'disabled' : '';
+
+        const actionText = req.status === 'pending'
+          ? 'Approve'
+          : (req.status === 'approved' ? 'Dispatch' : 'Dispatched');
+
+        const actionDisabled = req.status === 'dispatched' ? 'disabled' : '';
+
+        tr.innerHTML = `
+          <td>${req.branch}</td>
+          <td>${req.requested.join(' / ')}</td>
+          <td>${formatDateTime(req.requestedAt)}</td>
+          <td>
+            <div class="accepted-qty">
+              <input type="number" min="0" value="${acceptedValues[0]}" data-accepted-index="0" ${inputsDisabled}>
+              <span>/</span>
+              <input type="number" min="0" value="${acceptedValues[1]}" data-accepted-index="1" ${inputsDisabled}>
+              <span>/</span>
+              <input type="number" min="0" value="${acceptedValues[2]}" data-accepted-index="2" ${inputsDisabled}>
+            </div>
+          </td>
+          <td><span class="pill ${statusClass(req.status)}">${statusLabel(req.status)}</span></td>
+          <td style="text-align:right;">
+            <button class="primary request-action"
+                    data-request-id="${req.id}"
+                    style="padding:6px 14px;font-size:12.5px;"
+                    ${actionDisabled}>${actionText}</button>
+          </td>
+        `;
+
+        tr.querySelectorAll('[data-accepted-index]').forEach(input=>{
+          input.addEventListener('input', ()=>{
+            const latest = loadRequests();
+            const target = latest.find(r=>r.id === req.id);
+            if(!target) return;
+            if(!target.accepted) target.accepted = ['', '', ''];
+            if(!target.sold) target.sold = [0, 0, 0];
+
+            const idx = Number(input.dataset.acceptedIndex);
+            target.accepted[idx] = input.value;
+
+            // Outstanding belongs to this requisition only.
+            // Until CBS movement is fetched, all accepted quantity is outstanding.
+            if(!target.outstanding) target.outstanding = ['', '', ''];
+            const acceptedQty = parseInt(input.value, 10) || 0;
+            const soldQty = parseInt(target.sold[idx], 10) || 0;
+            target.outstanding[idx] = Math.max(acceptedQty - soldQty, 0);
+
+            saveRequests(latest);
+            renderRequisitionState();
+            renderRBDReports();
+          });
+        });
+
+        const action = tr.querySelector('.request-action');
+        if(action){
+          action.addEventListener('click', ()=>{
+            const latest = loadRequests();
+            const target = latest.find(r=>r.id === req.id);
+            if(!target) return;
+
+            if(target.status === 'pending'){
+              target.status = 'approved';
+              target.approvedAt = new Date().toISOString();
+            } else if(target.status === 'approved'){
+              target.status = 'dispatched';
+              target.dispatchedAt = new Date().toISOString();
+            }
+
+            saveRequests(latest);
+            renderRequisitionState();
+            renderRBDReports();
+          });
+        }
+
+        midBody.appendChild(tr);
+      });
+    }
+
+    renderRBDReports();
+  }
+
+  // BM/BOM submits a new requisition.
+  document.getElementById('requisition-submit')?.addEventListener('click', ()=>{
+    const inputs = [...document.querySelectorAll('#requisition-input-table tbody input')];
+    const requested = inputs.map(input=>{
+      const value = parseInt(input.value, 10);
+      return Number.isFinite(value) && value >= 0 ? value : 0;
+    });
+
+    if(requested.every(v=>v === 0)){
+      alert('Please enter a requested quantity before submitting.');
+      return;
+    }
+
+    const requests = loadRequests();
+    requests.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      branch: "Cox's Bazar Branch",
+      requested,
+      accepted: null,
+      // Requisition-level CBS fields are intentionally independent from
+      // Stock Reconciliation. They will be populated/updated from the
+      // requisition's own stock movement.
+      sold: [0, 0, 0],
+      outstanding: null,
+      requestedAt: new Date().toISOString(),
+      status: 'pending',
+      branchReceived: false
+    });
+
+    saveRequests(requests);
+    inputs.forEach(input=>input.value = 0);
+    renderRequisitionState();
+    alert('Requisition submitted successfully.');
+  });
+
+  window.addEventListener('storage', event=>{
+    if(event.key === REQUESTS_KEY){
+      renderRequisitionState();
+      renderRBDReports();
+    }
+  });
+
+  // ---------------- Stock reconciliation ----------------
+  function recalcRow(tr){
+    const sent = parseFloat(tr.dataset.sent)||0;
+    const issued = parseFloat(tr.querySelector('.issued').value)||0;
+    const stock = parseFloat(tr.querySelector('.stock').value)||0;
+    const variance = sent - issued - stock;
+    const varCell = tr.querySelector('.variance');
+    const remarkInput = tr.querySelector('.remark');
+
+    varCell.textContent = variance;
+
+    if(variance === 0){
+      varCell.className = 'variance zero';
+      tr.classList.remove('row-flag');
+      remarkInput.disabled = true;
+      remarkInput.classList.remove('needs-remark');
+      remarkInput.value = '';
+      remarkInput.style.borderColor = '';
+    } else {
+      varCell.className = 'variance off';
+      tr.classList.add('row-flag');
+      remarkInput.disabled = false;
+      remarkInput.classList.add('needs-remark');
+    }
+  }
+
+  document.querySelectorAll('#recon-table tbody tr').forEach(tr=>{
+    recalcRow(tr);
+    tr.querySelectorAll('.stock').forEach(inp=>{
+      inp.addEventListener('input', ()=>recalcRow(tr));
+    });
+  });
+
+  function lockReconciliation(){
+    document.querySelectorAll('#recon-table input').forEach(input=>{
+      input.disabled = true;
+      input.setAttribute('aria-disabled','true');
+    });
+    document.getElementById('recon-save').disabled = true;
+    document.getElementById('recon-submit').disabled = true;
+    document.getElementById('view-recon').classList.add('submitted');
+  }
+
+  document.getElementById('recon-submit').addEventListener('click', ()=>{
+    const rows = document.querySelectorAll('#recon-table tbody tr');
+    let missing = false;
+
+    rows.forEach(tr=>{
+      const variance = parseFloat(tr.querySelector('.variance').textContent)||0;
+      const remark = tr.querySelector('.remark');
+
+      if(variance > 0 && remark.value.trim()===''){
+        missing = true;
+        remark.style.borderColor = 'var(--red)';
+      }
+    });
+
+    if(missing){
+      alert('Please add a remark for every row with a positive variance before submitting.');
+      return;
+    }
+
+    const now = new Date();
+    const formatted = now.toLocaleString('en-GB', {
+      day:'2-digit', month:'short', year:'numeric',
+      hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true
+    });
+
+    const message = document.getElementById('recon-submitted-message');
+    message.textContent =
+      `Thank you. Your stock reconciliation was submitted successfully on ${formatted}. The table is now locked and cannot be edited.`;
+    message.classList.add('show');
+
+    lockReconciliation();
+  });
+
+  document.getElementById('recon-save').addEventListener('click', ()=>{
+    alert('Draft saved.');
+  });
+
+  // ---------------- RBD Reports ----------------
+  // The reconciliation page currently has one branch's live/demo values.
+  // RBD shows a readable 33-branch structure; branches without submitted
+  // data are shown as "No data" rather than inventing operational records.
+  function getReconSnapshot(){
+    const rows = [...document.querySelectorAll('#recon-table tbody tr')];
+    return rows.map(tr=>({
+      denomination: tr.querySelector('td')?.textContent.trim(),
+      historical: tr.querySelector('td:nth-child(2)')?.textContent.trim() || '0',
+      sold: tr.querySelector('.issued')?.value || '0',
+      physical: tr.querySelector('.stock')?.value || '0',
+      variance: tr.querySelector('.variance')?.textContent.trim() || '0',
+      outstanding: tr.querySelector('.outstanding')?.value || '0'
+    }));
+  }
+
+  function populateReconBranchFilter(){
+    const select = document.getElementById('rbd-recon-branch');
+    if(!select || select.options.length > 1) return;
+
+    BRANCHES.forEach(branch=>{
+      const option=document.createElement('option');
+      option.value=branch;
+      option.textContent=branch;
+      select.appendChild(option);
+    });
+  }
+
+  function renderRBDReports(){
+    populateReconBranchFilter();
+
+    const snapshot = getReconSnapshot();
+    const reconBody = document.getElementById('rbd-recon-body');
+
+    if(reconBody){
+      const selectedBranch = document.getElementById('rbd-recon-branch')?.value || 'all';
+      const selectedStatus = document.getElementById('rbd-recon-status')?.value || 'all';
+
+      const firstBranch = BRANCHES[0];
+      const rowsByDenom = {};
+      snapshot.forEach(r=>{ rowsByDenom[r.denomination]=r; });
+
+      const branchRows = BRANCHES.map((branch, branchIndex)=>{
+        const hasData = branch === firstBranch && snapshot.length > 0;
+        const varianceTotal = hasData
+          ? snapshot.reduce((sum,r)=>sum + (parseFloat(r.variance)||0), 0)
+          : 0;
+        const status = !hasData ? 'no-data' : (varianceTotal === 0 ? 'balanced' : 'variance');
+        return {branch, branchIndex, hasData, varianceTotal, status};
+      }).filter(x=>
+        (selectedBranch === 'all' || x.branch === selectedBranch) &&
+        (selectedStatus === 'all' || x.status === selectedStatus)
+      );
+
+      reconBody.innerHTML='';
+
+      branchRows.forEach(info=>{
+        if(!info.hasData){
+          const tr=document.createElement('tr');
+          tr.className='branch-start';
+          tr.innerHTML=`
+            <td class="branch-name">${info.branch}</td>
+            <td colspan="6" class="branch-empty">No submitted reconciliation data</td>
+            <td><span class="pill pending">No data</span></td>
+          `;
+          reconBody.appendChild(tr);
+          return;
+        }
+
+        ['BDT 500','BDT 1,000','BDT 5,000'].forEach((denom, idx)=>{
+          const r=rowsByDenom[denom];
+          const tr=document.createElement('tr');
+          if(idx===0) tr.className='branch-start';
+
+          const variance=parseFloat(r?.variance)||0;
+          const statusText = info.varianceTotal===0 ? 'Balanced' : 'Variance';
+          const statusCls = info.varianceTotal===0 ? 'ok' : 'warn';
+
+          tr.innerHTML=`
+            ${idx===0 ? `<td class="branch-name" rowspan="3">${info.branch}</td>` : ''}
+            <td class="denom">${denom}</td>
+            <td class="number">${r?.historical ?? '—'}</td>
+            <td class="number">${r?.sold ?? '—'}</td>
+            <td class="number">${r?.physical ?? '—'}</td>
+            <td class="number ${variance!==0 ? 'variance-positive' : 'variance-zero'}">${r?.variance ?? '—'}</td>
+            <td class="number">${r?.outstanding ?? '—'}</td>
+            ${idx===0 ? `<td rowspan="3"><span class="pill ${statusCls}">${statusText}</span></td>` : ''}
+          `;
+          reconBody.appendChild(tr);
+        });
+      });
+
+      const balanced=BRANCHES.filter((b,i)=>{
+        if(i!==0 || !snapshot.length) return false;
+        return snapshot.reduce((s,r)=>s+(parseFloat(r.variance)||0),0)===0;
+      }).length;
+      const variance=BRANCHES.filter((b,i)=>{
+        if(i!==0 || !snapshot.length) return false;
+        return snapshot.reduce((s,r)=>s+(parseFloat(r.variance)||0),0)!==0;
+      }).length;
+
+      document.getElementById('rbd-total-branches').textContent = BRANCHES.length;
+      document.getElementById('rbd-balanced-count').textContent = balanced;
+      document.getElementById('rbd-variance-count').textContent = variance;
+      document.getElementById('rbd-no-data-count').textContent = BRANCHES.length - balanced - variance;
+    }
+
+    const branchSelect = document.getElementById('rbd-branch-select');
+    const reqBody = document.getElementById('rbd-requisition-body');
+
+    if(reqBody && branchSelect){
+      const selectedBranch = branchSelect.value;
+      const requests = loadRequests().filter(req=>req.branch===selectedBranch);
+      reqBody.innerHTML='';
+
+      if(requests.length===0){
+        const tr=document.createElement('tr');
+        tr.innerHTML='<td colspan="6" style="color:var(--ink-soft);">No requisition data for this branch.</td>';
+        reqBody.appendChild(tr);
+      }else{
+        requests.slice().reverse().forEach(req=>{
+          const accepted=req.accepted ? req.accepted.join(' / ') : '—';
+          const dateReceived=req.receivedAt ? formatDateOnly(req.receivedAt) : '—';
+
+          // IMPORTANT: These values are tied ONLY to this requisition.
+          // They do not use or inherit values from Stock Reconciliation.
+          const soldValues = req.sold || [0, 0, 0];
+          const outstandingValues = req.outstanding || (
+            req.accepted
+              ? req.accepted.map((qty, i) => Math.max((parseInt(qty,10)||0) - (parseInt(soldValues[i],10)||0), 0))
+              : [0, 0, 0]
+          );
+          const sold=soldValues.join(' / ');
+          const outstanding=outstandingValues.join(' / ');
+
+          // Physical Stock remains a separate field and is shown as the
+          // requisition quantity remaining after sold movement for now.
+          // It is not sourced from Stock Reconciliation.
+          const physical=outstandingValues.join(' / ');
+
+          const tr=document.createElement('tr');
+          tr.innerHTML=`
+            <td>${req.requested.join(' / ')}</td>
+            <td>${accepted}</td>
+            <td>${dateReceived}</td>
+            <td>${sold || '—'}</td>
+            <td>${outstanding || '—'}</td>
+            <td>${physical || '—'}</td>
+          `;
+          reqBody.appendChild(tr);
+        });
+      }
+    }
+  }
+
+  document.getElementById('rbd-branch-select')?.addEventListener('change', renderRBDReports);
+  document.getElementById('rbd-recon-branch')?.addEventListener('change', renderRBDReports);
+  document.getElementById('rbd-recon-status')?.addEventListener('change', renderRBDReports);
+
+  // Initial render
+  renderRequisitionState();
+  renderRBDReports();
+</script>
+
+</body>
+</html>
